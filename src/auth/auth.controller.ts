@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Inject, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Get, HttpException, HttpStatus, Inject, Post, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { instanceToPlain } from 'class-transformer';
 import { IUserService } from 'src/users/user';
 import { Routes, Services } from 'src/utils/constants';
 import { IAuthService } from './auth';
@@ -12,11 +13,15 @@ export class AuthController {
     @Inject(Services.USERS) private userService: IUserService
   ){  }
 
-  @UsePipes(ValidationPipe)
   @Post('register')
-  registerUser(@Body() createUserDto: CreateUserDto) {
+    // @UseInterceptors(ClassSerializerInterceptor)
+  async registerUser(@Body() createUserDto: CreateUserDto) {
     console.log(createUserDto);
-    this.userService.createUser(createUserDto);
+    const user = await this.userService.createUser(createUserDto);
+    if (!user) {
+      throw new HttpException('User already exists', HttpStatus.NOT_ACCEPTABLE);
+    }
+    return instanceToPlain(user)
   };
 
   @Post('login')
