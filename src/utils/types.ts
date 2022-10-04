@@ -1,6 +1,6 @@
 export type CreateUserDetails = {
   email: string;
-  password: string;
+  passWord: string;
   firstName: string;
   lastName: string;
 };

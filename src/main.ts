@@ -12,6 +12,7 @@ async function bootstrap() {
   const { PORT, COOKIE_SECRET } = process.env;
   const app = await NestFactory.create(AppModule);
   const sessionRepository = getRepository(Session);
+  app.enableCors({ origin: ['http://localhost:3000'], credentials: true });
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe()); //set up validation pipe
   app.use(

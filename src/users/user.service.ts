@@ -18,7 +18,7 @@ export class UserService implements IUserService {
     if (existingUser) {
       return null;
     }
-    const password = await hassPassword(userDetail.password);
+    const password = await hassPassword(userDetail.passWord);
     const newUSer = this.userRepository.create({ ...userDetail, password });
     return this.userRepository.save(newUSer);
   }
