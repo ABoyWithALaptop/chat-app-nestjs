@@ -27,7 +27,6 @@ export class UserService implements IUserService {
     const user = await this.userRepository.findOne({
       email: findUserParams.email,
     });
-    console.log('user: ', user);
     return user;
   }
 }

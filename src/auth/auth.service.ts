@@ -17,6 +17,8 @@ export class AuthService implements IAuthService {
     if (!user) {
       throw new HttpException('invalid Credentials', HttpStatus.UNAUTHORIZED);
     }
-    return await comparePassword(userCredentials.password, user.password);
+    return comparePassword(userCredentials.password, user.password)
+      ? user
+      : null;
   }
 }
