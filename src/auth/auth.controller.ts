@@ -48,7 +48,7 @@ export class AuthController {
   @Get('status')
   @UseGuards(AuthenticatedGuard)
   status(@Req() req: Request, @Res() res: Response) {
-    console.log(req.user);
+    // console.log(req.user);
     return res.send(req.user);
   }
 

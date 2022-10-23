@@ -24,9 +24,13 @@ export class UserService implements IUserService {
   }
 
   async findUser(findUserParams: findUserParams) {
-    const user = await this.userRepository.findOne({
-      email: findUserParams.email,
+    const user = await this.userRepository.findOne(findUserParams, {
+      relations: ['participant'],
     });
     return user;
+  }
+
+  async saveUser(user: User) {
+    return this.userRepository.save(user);
   }
 }

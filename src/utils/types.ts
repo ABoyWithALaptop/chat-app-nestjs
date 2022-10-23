@@ -1,3 +1,5 @@
+import { User } from './typeorm';
+
 export type CreateUserDetails = {
   email: string;
   passWord: string;
@@ -16,7 +18,19 @@ export type findUserParams = Partial<{
 }>;
 
 export type CreateConversationParams = {
-  authorId: number;
   recipientId: number;
   message: string;
+  authorId: number; //? why have to force user send their own id by manually
+};
+
+export type FindParticipantParams = Partial<{
+  id: number;
+}>;
+
+export interface AuthenticatedRequest extends Request {
+  user: User;
+}
+
+export type CreateParticipantParams = {
+  id: number;
 };
