@@ -24,9 +24,7 @@ export class UserService implements IUserService {
   }
 
   async findUser(findUserParams: findUserParams) {
-    const user = await this.userRepository.findOne(findUserParams, {
-      relations: ['participant'],
-    });
+    const user = await this.userRepository.findOne(findUserParams, {});
     return user;
   }
 
