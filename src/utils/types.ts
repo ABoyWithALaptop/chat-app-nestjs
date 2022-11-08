@@ -20,7 +20,6 @@ export type findUserParams = Partial<{
 export type CreateConversationParams = {
   recipientId: number;
   message: string;
-  authorId: number; //? why have to force user send their own id by manually
 };
 
 export type FindParticipantParams = Partial<{
@@ -33,4 +32,10 @@ export interface AuthenticatedRequest extends Request {
 
 export type CreateParticipantParams = {
   id: number;
+};
+
+export type createMessageParam = {
+  content: string;
+  conversationId: number;
+  user: User;
 };

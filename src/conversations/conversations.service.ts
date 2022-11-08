@@ -19,6 +19,9 @@ export class ConversationsService implements IConversationsService {
   async findAll() {
     return await this.conversationRepository
       .createQueryBuilder('conversations')
+      .select('conversations')
+      .leftJoinAndSelect('conversations.creator', 'creator')
+      .leftJoinAndSelect('conversations.recipient', 'recipient')
       .getMany();
   }
 
@@ -26,17 +29,37 @@ export class ConversationsService implements IConversationsService {
     const conversations = await this.conversationRepository
       .createQueryBuilder('conversations')
       .select('conversations')
-      .leftJoinAndSelect('conversations.creator', 'creator')
-      .leftJoinAndSelect('conversations.recipient', 'recipient')
+      .leftJoin('conversations.creator', 'creator')
+      .addSelect([
+        'creator.id',
+        'creator.email',
+        'creator.lastName',
+        'creator.firstName',
+      ])
+      .leftJoin('conversations.recipient', 'recipient')
+      .addSelect([
+        'recipient.id',
+        'recipient.email',
+        'recipient.lastName',
+        'recipient.firstName',
+      ])
+      .leftJoinAndSelect('conversations.message', 'message')
+
       .where('creator.id = (:id)', { id })
       .orWhere('recipient.id = (:id)', { id })
+
       .limit(2)
       .getMany();
     return conversations;
   }
 
   async getConversationById(id: number) {
-    return this.conversationRepository.findOne(id);
+    return this.conversationRepository.findOne({
+      relations: ['message', 'creator', 'recipient'],
+      where: {
+        id,
+      },
+    });
   }
 
   async createConversations(user: User, params: CreateConversationParams) {
@@ -58,7 +81,7 @@ export class ConversationsService implements IConversationsService {
       .where('creator.id in (:id)', { id: [user.id, recipientId] })
       .andWhere('recipient.id in (:id)', { id: [user.id, recipientId] })
       .getMany();
-    if (conversationsCreator) {
+    if (conversationsCreator.length !== 0) {
       console.log(conversationsCreator);
       throw new HttpException(
         'Conversation already exist',
@@ -69,6 +92,7 @@ export class ConversationsService implements IConversationsService {
     const conversation = await this.conversationRepository.create({
       creator: userDB,
       recipient: recipient,
+      createdAt: Date.now(),
     });
     return await this.conversationRepository.save(conversation);
   }

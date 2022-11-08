@@ -5,10 +5,6 @@ export class CreateConversation {
   @IsNotEmpty()
   recipientId: number;
 
-  @IsNumber()
-  @IsNotEmpty()
-  authorId: number;
-
   @IsString()
   @IsNotEmpty()
   message: string;

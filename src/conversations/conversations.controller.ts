@@ -35,10 +35,6 @@ export class ConversationsController {
 
   @Get()
   async getConversations(@AuthUser() user: User) {
-    // const { conversations } = await this.conversationsService.findDefault(
-    //   user.participant.id,
-    // );
-    // return conversations;
     return this.conversationsService.findDefault(user.id);
   }
 
