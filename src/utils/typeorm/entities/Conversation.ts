@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   JoinTable,
@@ -29,7 +30,7 @@ export class Conversation {
   @JoinColumn()
   message: Message[];
 
-  @Column({ name: 'created_at', type: 'bigint' })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: number;
 
   @OneToOne(() => Message)

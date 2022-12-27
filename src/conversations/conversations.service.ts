@@ -1,8 +1,9 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { IMessageService } from 'src/messages/message';
 import { IUserService } from 'src/users/user';
 import { Services } from 'src/utils/constants';
-import { Conversation, User } from 'src/utils/typeorm';
+import { Conversation, Message, User } from 'src/utils/typeorm';
 import { CreateConversationParams } from 'src/utils/types';
 import { Repository } from 'typeorm';
 import { IConversationsService } from './conversations';
@@ -13,7 +14,7 @@ export class ConversationsService implements IConversationsService {
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
     @Inject(Services.USERS)
-    private readonly userService: IUserService,
+    private readonly userService: IUserService, // @Inject(Services.MESSAGES) // private readonly messageService: IMessageService,
   ) {}
 
   async findAll() {
@@ -43,8 +44,9 @@ export class ConversationsService implements IConversationsService {
         'recipient.lastName',
         'recipient.firstName',
       ])
-      .leftJoinAndSelect('conversations.message', 'message')
-
+      .leftJoinAndSelect('conversations.lastMessageSent', 'lastSent')
+      .leftJoin('lastSent.author', 'author')
+      .addSelect(['author.id', 'author.lastName', 'author.firstName'])
       .where('creator.id = (:id)', { id })
       .orWhere('recipient.id = (:id)', { id })
 
@@ -54,12 +56,35 @@ export class ConversationsService implements IConversationsService {
   }
 
   async getConversationById(id: number) {
-    return this.conversationRepository.findOne({
-      relations: ['message', 'creator', 'recipient'],
-      where: {
-        id,
-      },
-    });
+    return this.conversationRepository
+      .createQueryBuilder('conversations')
+      .where('conversations.id = (:id)', { id })
+      .leftJoin('conversations.creator', 'creator')
+      .addSelect([
+        'creator.id',
+        'creator.email',
+        'creator.lastName',
+        'creator.firstName',
+      ])
+      .leftJoin('conversations.recipient', 'recipient')
+      .addSelect([
+        'recipient.id',
+        'recipient.email',
+        'recipient.lastName',
+        'recipient.firstName',
+      ])
+      .leftJoinAndSelect('conversations.lastMessageSent', 'lastSent')
+      .leftJoin('lastSent.author', 'author')
+      .addSelect(['author.id', 'author.lastName', 'author.firstName'])
+      .leftJoinAndSelect('conversations.message', 'message')
+      .orderBy('message.created_at', 'ASC')
+      .leftJoin('message.author', 'authorSingle')
+      .addSelect([
+        'authorSingle.id',
+        'authorSingle.lastName',
+        'authorSingle.firstName',
+      ])
+      .getOne();
   }
 
   async createConversations(user: User, params: CreateConversationParams) {
@@ -92,8 +117,19 @@ export class ConversationsService implements IConversationsService {
     const conversation = await this.conversationRepository.create({
       creator: userDB,
       recipient: recipient,
-      createdAt: Date.now(),
+      // createdAt: Date.now(),
     });
     return await this.conversationRepository.save(conversation);
+  }
+
+  async updateConversation(conversation: Conversation) {
+    return await this.conversationRepository.save(conversation);
+  }
+  async setLastMessage(lastMessage: Message) {
+    const conversation = await this.conversationRepository.findOne({
+      id: lastMessage.conversation.id,
+    });
+    conversation.lastMessageSent = lastMessage;
+    return await this.updateConversation(conversation);
   }
 }

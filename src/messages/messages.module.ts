@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConversationsModule } from 'src/conversations/conversations.module';
 import { Services } from 'src/utils/constants';
@@ -16,7 +16,13 @@ import { MessageService } from './message.service';
   ],
   imports: [
     TypeOrmModule.forFeature([Message, Conversation]),
-    ConversationsModule,
+    forwardRef(() => ConversationsModule),
+  ],
+  exports: [
+    {
+      provide: Services.MESSAGES,
+      useClass: MessageService,
+    },
   ],
 })
 export class MessagesModule {}

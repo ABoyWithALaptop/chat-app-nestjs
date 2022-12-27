@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   ManyToMany,
   ManyToOne,
@@ -16,7 +17,7 @@ export class Message {
   @Column()
   content: string;
 
-  @Column({ name: 'created_at', type: 'bigint' })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: number;
 
   @ManyToOne(() => User, (user) => user.message)
