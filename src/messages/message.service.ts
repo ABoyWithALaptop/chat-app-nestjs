@@ -40,17 +40,15 @@ export class MessageService implements IMessageService {
         'Cant create message in this conversation',
         HttpStatus.FORBIDDEN,
       );
-    console.log(conversation);
 
     const message = await this.messageRepository.create({
       content,
       conversation,
       author: user,
     });
-    console.log('message', message);
     const savedMessage = await this.messageRepository.save(message);
     await this.conversationService.setLastMessage(savedMessage);
-    return;
+    return savedMessage;
   }
 
   async firstSentMessage(user: User, params: CreateConversationParams) {
@@ -66,8 +64,8 @@ export class MessageService implements IMessageService {
     });
   }
 
-  getMessageByConversationId(conversationId: number): Promise<Message[]> {
-    return this.messageRepository.find({
+  async getMessageByConversationId(conversationId: number): Promise<Message[]> {
+    return await this.messageRepository.find({
       where: {
         conversation: { id: conversationId },
       },

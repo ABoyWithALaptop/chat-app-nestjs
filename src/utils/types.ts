@@ -1,4 +1,4 @@
-import { User } from './typeorm';
+import { Message, User } from './typeorm';
 
 export type CreateUserDetails = {
   email: string;
@@ -15,6 +15,13 @@ export type validateUserDetails = {
 export type findUserParams = Partial<{
   id: number;
   email?: string;
+}>;
+
+export type findAllUserParams = Partial<{
+  // id: number;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
 }>;
 
 export type CreateConversationParams = {

@@ -1,4 +1,6 @@
 import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import { ParseIntPipe } from '@nestjs/common/pipes/parse-int.pipe';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateConversation } from 'src/conversations/dtos/CreateConversation.dto';
 import { Routes, Services } from 'src/utils/constants';
 import { AuthUser } from 'src/utils/decorators';
@@ -10,22 +12,34 @@ import { IMessageService } from './message';
 export class MessageController {
   constructor(
     @Inject(Services.MESSAGES) private readonly messageService: IMessageService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   @Post()
-  createMessage(
+  async createMessage(
     @Body() createMessagePayload: createMessageDto,
     @AuthUser() user: User,
   ) {
-    return this.messageService.createMessage({ ...createMessagePayload, user });
+    const msg = await this.messageService.createMessage({
+      ...createMessagePayload,
+      user,
+    });
+    this.eventEmitter.emit('message.created', msg);
+    return;
   }
 
   @Get(':conversationId')
-  getMessageFromConversation(
+  async getMessageFromConversation(
     @AuthUser() user: User,
-    @Param('conversationId') conversationId: number,
+    @Param('conversationId', ParseIntPipe) conversationId: number,
   ) {
-    return this.messageService.getMessageByConversationId(conversationId);
+    const messages = await this.messageService.getMessageByConversationId(
+      conversationId,
+    );
+    return {
+      conversationId: conversationId,
+      messages: messages,
+    };
   }
 
   @Post('/firstMessage')
