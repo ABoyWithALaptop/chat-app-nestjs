@@ -1,0 +1,6 @@
+{
+  "marquee.widgets.npm-stats.packageNames": [
+    "chat-app-nestjs"
+  ],
+  "dotenv.enableAutocloaking": true
+}
