@@ -127,7 +127,7 @@ export class ConversationsService implements IConversationsService {
   }
   async setLastMessage(lastMessage: Message) {
     const conversation = await this.conversationRepository.findOne({
-      id: lastMessage.conversation.id,
+      where: { id: lastMessage.conversation.id },
     });
     conversation.lastMessageSent = lastMessage;
     return await this.updateConversation(conversation);

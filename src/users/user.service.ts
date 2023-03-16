@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { instanceToPlain } from 'class-transformer';
 import { hassPassword } from 'src/utils/helpers';
 import { User } from 'src/utils/typeorm';
-import { CreateUserDetails, findUserParams } from 'src/utils/types';
+import {
+  CreateUserDetails,
+  findAllUserParams,
+  findUserParams,
+} from 'src/utils/types';
 import { Repository } from 'typeorm';
 import { IUserService } from './user';
 
@@ -14,7 +18,7 @@ export class UserService implements IUserService {
   ) {}
   async createUser(userDetail: CreateUserDetails) {
     const existingUser = await this.userRepository.findOne({
-      email: userDetail.email,
+      where: { email: userDetail.email },
     });
     if (existingUser) {
       return null;
@@ -25,7 +29,9 @@ export class UserService implements IUserService {
   }
 
   async findUser(findUserParams: findUserParams) {
-    const user = await this.userRepository.findOne(findUserParams, {});
+    const user = await this.userRepository.findOne({
+      where: { ...findUserParams },
+    });
     const userNoPassword = instanceToPlain(user) as User;
     return userNoPassword;
   }
@@ -35,7 +41,15 @@ export class UserService implements IUserService {
   }
 
   async findUserWithPassword(findUserParams: findUserParams) {
-    const user = await this.userRepository.findOne(findUserParams, {});
+    const user = await this.userRepository.findOne({
+      where: { ...findUserParams },
+    });
     return user;
+  }
+  async findAllUsers(findAllUserParams: findAllUserParams) {
+    return this.userRepository.find({
+      // select: ['id', 'email', 'firstName', 'lastName'],
+      where: { ...findAllUserParams },
+    });
   }
 }
