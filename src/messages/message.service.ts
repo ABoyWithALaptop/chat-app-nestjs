@@ -46,8 +46,22 @@ export class MessageService implements IMessageService {
       conversation,
       author: user,
     });
-    const savedMessage = await this.messageRepository.save(message);
-    await this.conversationService.setLastMessage(savedMessage);
+    let savedMessage = await this.messageRepository.save(message);
+    const updatedConversation = await this.conversationService.setLastMessage(
+      savedMessage,
+    );
+    if (updatedConversation) {
+      savedMessage = await this.messageRepository.findOne({
+        where: { id: savedMessage.id },
+        relations: [
+          'author',
+          'conversation',
+          'conversation.creator',
+          'conversation.recipient',
+          'conversation.lastMessageSent',
+        ],
+      });
+    }
     return savedMessage;
   }
 

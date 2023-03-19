@@ -43,20 +43,19 @@ export class MessingGateway implements OnGatewayConnection {
 
   @OnEvent('message.created')
   handleMessageCreateEvent(payload: Message) {
-    console.log('inside handleMessageCreateEvent');
+    console.log('inside handleMessageCreateEvent', payload);
     const {
       author,
       conversation: { creator, recipient },
     } = payload;
     const authorSocket = this.sessions.getUserSocket(author.id);
+    console.log('authorSocket', authorSocket?.user);
     const recipientSocket =
       author.id === creator.id
         ? this.sessions.getUserSocket(recipient.id)
         : this.sessions.getUserSocket(creator.id);
-    console.log('authorSocket', authorSocket.user);
-    console.log('recipientSocket', recipientSocket.user);
-    authorSocket.emit('onMessage', payload);
-    recipientSocket.emit('onMessage', payload);
+    if (authorSocket) authorSocket.emit('onMessage', payload);
+    if (recipientSocket) recipientSocket.emit('onMessage', payload);
     // this.server.emit('onMessage', payload);
   }
 }

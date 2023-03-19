@@ -14,9 +14,9 @@ async function bootstrap() {
   const sessionRepository = app.get(Services.AUTH).sessionRepository;
   app.enableCors({ origin: ['http://localhost:3000'], credentials: true });
   app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe()); //set up validation pipe
   const sever = new WebSocketAdapter(app);
-  app.useWebSocketAdapter(sever); //set up validation pipe
+  app.useWebSocketAdapter(sever);
   app.use(
     session({
       secret: COOKIE_SECRET,

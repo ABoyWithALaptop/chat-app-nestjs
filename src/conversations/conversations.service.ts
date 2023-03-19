@@ -49,8 +49,8 @@ export class ConversationsService implements IConversationsService {
       .addSelect(['author.id', 'author.lastName', 'author.firstName'])
       .where('creator.id = (:id)', { id })
       .orWhere('recipient.id = (:id)', { id })
-
-      .limit(2)
+      .orderBy('lastSent.created_at', 'DESC')
+      // .limit(2)
       .getMany();
     return conversations;
   }
@@ -125,7 +125,7 @@ export class ConversationsService implements IConversationsService {
   async updateConversation(conversation: Conversation) {
     return await this.conversationRepository.save(conversation);
   }
-  async setLastMessage(lastMessage: Message) {
+  async setLastMessage(lastMessage: Message): Promise<Conversation> {
     const conversation = await this.conversationRepository.findOne({
       where: { id: lastMessage.conversation.id },
     });
