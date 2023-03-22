@@ -6,6 +6,6 @@ export class CreateConversation {
   recipientId: number;
 
   @IsString()
-  @IsNotEmpty()
+  // @IsNotEmpty()
   message: string;
 }
