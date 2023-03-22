@@ -58,4 +58,19 @@ export class MessingGateway implements OnGatewayConnection {
     if (recipientSocket) recipientSocket.emit('onMessage', payload);
     // this.server.emit('onMessage', payload);
   }
+  @OnEvent('conversations.created')
+  handleConversationCreateEvent(payload: Conversation) {
+    console.log('inside handleConversationCreateEvent', payload);
+    const { creator, recipient } = payload;
+    const creatorSocket = this.sessions.getUserSocket(creator.id);
+    console.log('authorSocket', creatorSocket?.user);
+    const recipientSocket = this.sessions.getUserSocket(recipient.id);
+    console.log('recipientSocket', recipientSocket?.user);
+    if (creatorSocket.user == recipientSocket.user)
+      creatorSocket.emit('newConversation', payload);
+    else {
+      if (creatorSocket) creatorSocket.emit('newConversation', payload);
+      if (recipientSocket) recipientSocket.emit('newConversation', payload);
+    }
+  }
 }
