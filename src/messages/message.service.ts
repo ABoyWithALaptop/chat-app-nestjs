@@ -65,19 +65,6 @@ export class MessageService implements IMessageService {
     return savedMessage;
   }
 
-  async firstSentMessage(user: User, params: CreateConversationParams) {
-    const conversation = await this.conversationService.createConversations(
-      user,
-      params,
-    );
-    const content = params.message;
-    return this.createMessage({
-      user,
-      content,
-      conversationId: conversation.id,
-    });
-  }
-
   async getMessageByConversationId(conversationId: number): Promise<Message[]> {
     return await this.messageRepository.find({
       where: {

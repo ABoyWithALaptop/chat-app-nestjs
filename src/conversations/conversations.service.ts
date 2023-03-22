@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IMessageService } from 'src/messages/message';
 import { IUserService } from 'src/users/user';
@@ -14,7 +20,9 @@ export class ConversationsService implements IConversationsService {
     @InjectRepository(Conversation)
     private readonly conversationRepository: Repository<Conversation>,
     @Inject(Services.USERS)
-    private readonly userService: IUserService, // @Inject(Services.MESSAGES) // private readonly messageService: IMessageService,
+    private readonly userService: IUserService,
+    @Inject(forwardRef(() => Services.MESSAGES))
+    private readonly messageService: IMessageService,
   ) {}
 
   async findAll() {
@@ -105,6 +113,7 @@ export class ConversationsService implements IConversationsService {
       .leftJoin('conversations.recipient', 'recipient')
       .where('creator.id in (:id)', { id: [user.id, recipientId] })
       .andWhere('recipient.id in (:id)', { id: [user.id, recipientId] })
+      .andWhere('recipient.id !=creator.id ', { id: [user.id, recipientId] })
       .getMany();
     if (conversationsCreator.length !== 0) {
       console.log(conversationsCreator);
@@ -119,7 +128,22 @@ export class ConversationsService implements IConversationsService {
       recipient: recipient,
       // createdAt: Date.now(),
     });
-    return await this.conversationRepository.save(conversation);
+    const savedConversation = await this.conversationRepository.save(
+      conversation,
+    );
+    if (params.message.length > 0) {
+      console.log('first message exist at created conversation');
+      const message = await this.messageService.createMessage({
+        content: params.message,
+        conversationId: savedConversation.id,
+        user: user,
+      });
+      const conversationWithFirstMessage = await this.getConversationById(
+        savedConversation.id,
+      );
+      return conversationWithFirstMessage;
+    }
+    return savedConversation;
   }
 
   async updateConversation(conversation: Conversation) {

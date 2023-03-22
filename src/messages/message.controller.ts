@@ -41,15 +41,4 @@ export class MessageController {
       messages: messages,
     };
   }
-
-  @Post('/firstMessage')
-  async firstSendMessage(
-    @AuthUser() user: User,
-    @Body() createConversationPayload: CreateConversation,
-  ) {
-    return await this.messageService.firstSentMessage(
-      user,
-      createConversationPayload,
-    );
-  }
 }
