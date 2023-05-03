@@ -96,26 +96,28 @@ export class ConversationsService implements IConversationsService {
   }
 
   async createConversations(user: User, params: CreateConversationParams) {
-    const { recipientId } = params;
+    const { recipientEmail } = params;
     const userDB = await this.userService.findUser({ id: user.id });
 
-    const recipient = await this.userService.findUser({ id: recipientId });
+    const recipient = await this.userService.findUser({
+      email: recipientEmail,
+    });
     if (!recipient)
       throw new HttpException(
         'Recipient is not found ',
         HttpStatus.BAD_REQUEST,
       );
 
-    const conversationsCreator = await this.conversationRepository
-      .createQueryBuilder('conversations')
-      .select('conversations')
-      .leftJoin('conversations.creator', 'creator')
-      .leftJoin('conversations.recipient', 'recipient')
-      .where('creator.id in (:id)', { id: [user.id, recipientId] })
-      .andWhere('recipient.id in (:id)', { id: [user.id, recipientId] })
-      .andWhere('recipient.id !=creator.id ', { id: [user.id, recipientId] })
-      .getMany();
-    if (conversationsCreator.length !== 0) {
+    const conversationsCreator = await this.conversationRepository.findOneBy(
+      {
+        creator: { id: user.id },
+        recipient: { id: recipient.id },
+      } || {
+        creator: { id: recipient.id },
+        recipient: { id: user.id },
+      },
+    );
+    if (conversationsCreator) {
       console.log(conversationsCreator);
       throw new HttpException(
         'Conversation already exist',
