@@ -8,7 +8,7 @@ import {
   findAllUserParams,
   findUserParams,
 } from 'src/utils/types';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { IUserService } from './user';
 
 @Injectable()
@@ -43,13 +43,20 @@ export class UserService implements IUserService {
   async findUserWithPassword(findUserParams: findUserParams) {
     const user = await this.userRepository.findOne({
       where: { ...findUserParams },
+      select: ['id', 'email', 'firstName', 'lastName', 'password'],
     });
     return user;
   }
-  async findAllUsers(findAllUserParams: findAllUserParams) {
+  async findAllUsersWithConditions(findAllUserParams: findAllUserParams) {
     return this.userRepository.find({
       // select: ['id', 'email', 'firstName', 'lastName'],
       where: { ...findAllUserParams },
     });
+  }
+  async findAvailableUsers(user: User) {
+    const users = await this.userRepository.find({
+      where: { id: Not(user.id) },
+    });
+    return users;
   }
 }

@@ -26,7 +26,7 @@ export class User {
   @Column()
   lastName: string;
 
-  @Column()
+  @Column({ select: false })
   @Exclude()
   password: string;
 
@@ -44,4 +44,8 @@ export class User {
     cascade: ['insert', 'remove'],
   })
   conversationReceived: Conversation[];
+  toJSON() {
+    delete this.password;
+    return this;
+  }
 }

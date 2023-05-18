@@ -13,7 +13,7 @@ export type validateUserDetails = {
 };
 
 export type findUserParams = Partial<{
-  id: number;
+  id?: number;
   email?: string;
 }>;
 
@@ -25,7 +25,7 @@ export type findAllUserParams = Partial<{
 }>;
 
 export type CreateConversationParams = {
-  recipientId: number;
+  recipientEmail: string;
   message: string;
 };
 
@@ -46,3 +46,9 @@ export type createMessageParam = {
   conversationId: number;
   user: User;
 };
+
+export type deleteMessageParams = {
+  messageId: number;
+  user: User;
+};
+export type modifyMessageParams = Partial<Message> & { id: number };

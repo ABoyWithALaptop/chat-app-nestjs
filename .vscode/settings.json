@@ -2,5 +2,20 @@
   "marquee.widgets.npm-stats.packageNames": [
     "chat-app-nestjs"
   ],
-  "dotenv.enableAutocloaking": true
+  "dotenv.enableAutocloaking": true,
+  "sqltools.connections": [
+    {
+      "mysqlOptions": {
+        "authProtocol": "xprotocol"
+      },
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 33060,
+      "driver": "MySQL",
+      "name": "chatapp_db",
+      "database": "chatapp_db",
+      "username": "root",
+      "connectionTimeout": 30
+    }
+  ]
 }

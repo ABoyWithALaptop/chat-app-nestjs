@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { ParseIntPipe } from '@nestjs/common/pipes/parse-int.pipe';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateConversation } from 'src/conversations/dtos/CreateConversation.dto';
@@ -7,7 +16,10 @@ import { AuthUser } from 'src/utils/decorators';
 import { User } from 'src/utils/typeorm';
 import { createMessageDto } from './dtos/CreateMessage.dto';
 import { IMessageService } from './message';
+import { AuthGuard } from '@nestjs/passport';
+import { AuthenticatedGuard } from 'src/auth/utils/Guards';
 
+@UseGuards(AuthenticatedGuard)
 @Controller(Routes.MESSAGES)
 export class MessageController {
   constructor(
@@ -17,24 +29,38 @@ export class MessageController {
 
   @Post()
   async createMessage(
-    @Body() createMessagePayload: createMessageDto,
+    @Param('id', ParseIntPipe) conversationId: number,
     @AuthUser() user: User,
+    @Body() { content }: createMessageDto,
   ) {
-    const msg = await this.messageService.createMessage({
-      ...createMessagePayload,
-      user,
-    });
+    const params = { user, content, conversationId };
+    const msg = await this.messageService.createMessage(params);
     this.eventEmitter.emit('message.created', msg);
     return;
   }
 
-  @Get(':conversationId')
+  @Delete(':messageId')
+  async deleteMessageFormConversation(
+    @Param('messageId', ParseIntPipe) messageId: number,
+    @AuthUser() user: User,
+  ) {
+    try {
+      console.log('messageId', messageId);
+      return await this.messageService.deleteMessage({ messageId, user });
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
+  }
+  @Get('')
   async getMessageFromConversation(
     @AuthUser() user: User,
-    @Param('conversationId', ParseIntPipe) conversationId: number,
+    @Param('id', ParseIntPipe) conversationId: number,
   ) {
+    console.log('conversationId', conversationId);
     const messages = await this.messageService.getMessageByConversationId(
       conversationId,
+      user,
     );
     return {
       conversationId: conversationId,

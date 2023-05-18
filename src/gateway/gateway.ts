@@ -12,6 +12,7 @@ import { Services } from 'src/utils/constants';
 import { Conversation, Message } from 'src/utils/typeorm';
 import { IGatewaySessionManager } from './gateway.session';
 import { AuthenticatedSocket } from 'src/utils/interfaces';
+import { IConversationsService } from 'src/conversations/conversations';
 
 @WebSocketGateway({
   cors: {
@@ -23,13 +24,67 @@ export class MessingGateway implements OnGatewayConnection {
   constructor(
     @Inject(Services.GATEWAY_SESSION_MANAGER)
     private readonly sessions: IGatewaySessionManager,
+    @Inject(Services.CONVERSATIONS)
+    private readonly conversationsService: IConversationsService,
   ) {}
   handleConnection(client: AuthenticatedSocket, ...args: any[]) {
-    console.log('income connection');
-    console.log(client.id);
+    this.conversationsService
+      .findDefault(client.user?.id)
+      .then((conversations) => {
+        conversations.forEach((conversation) => {
+          client.join(`conversation:${conversation.id}`);
+        });
+        console.log('after join', client.rooms);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    // console.log('room at server', this.server.sockets.adapter.rooms);
+
     this.sessions.setUserSocket(client.user.id, client);
     // console.log(this.sessions);
+    console.table(this.sessions.getSockets());
     client.emit('connected', { status: 'good' });
+  }
+
+  @SubscribeMessage('joinConversations')
+  handleJoinConversations(client: AuthenticatedSocket) {
+    console.log('join room');
+    this.conversationsService
+      .findDefault(client.user.id)
+      .then((conversations) => {
+        conversations.forEach((conversation) => {
+          client.join(`conversation:${conversation.id}`);
+        });
+        console.log('after join', client.rooms);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+
+  @SubscribeMessage('typing')
+  handleTyping(client: AuthenticatedSocket, payload: number) {
+    if (client.typing) {
+      return;
+      // this.server.in(`conversation:${payload}`).emit('userType', null);
+    } else {
+      this.sessions.setTyping(client.user.id, true);
+      const setOfUserTyping = this.sessions.getAllTyping(payload);
+      this.server
+        .in(`conversation:${payload}`)
+        .emit('userType', setOfUserTyping);
+    }
+  }
+  @SubscribeMessage('notTyping')
+  handleNotTyping(client: AuthenticatedSocket, payload: number) {
+    console.log('not typing', client.user.id);
+    this.sessions.setTyping(client.user.id, false);
+    const setOfUserTyping = this.sessions.getAllTyping(payload);
+    console.log('setOfUserStillTyping', setOfUserTyping);
+    this.server
+      .in(`conversation:${payload}`)
+      .emit('userNotTyping', setOfUserTyping);
   }
   @WebSocketServer()
   server: Server;
@@ -46,31 +101,38 @@ export class MessingGateway implements OnGatewayConnection {
     console.log('inside handleMessageCreateEvent', payload);
     const {
       author,
-      conversation: { creator, recipient },
+      conversation: { id },
     } = payload;
     const authorSocket = this.sessions.getUserSocket(author.id);
-    console.log('authorSocket', authorSocket?.user);
-    const recipientSocket =
-      author.id === creator.id
-        ? this.sessions.getUserSocket(recipient.id)
-        : this.sessions.getUserSocket(creator.id);
-    if (authorSocket) authorSocket.emit('onMessage', payload);
-    if (recipientSocket) recipientSocket.emit('onMessage', payload);
-    // this.server.emit('onMessage', payload);
+    if (this.server.sockets.adapter.rooms.get(`conversation:${id}`)) {
+      console.log('send to room', `conversation:${id}`);
+      this.server.in(`conversation:${id}`).emit('onMessage', payload);
+    }
   }
   @OnEvent('conversations.created')
   handleConversationCreateEvent(payload: Conversation) {
     console.log('inside handleConversationCreateEvent', payload);
     const { creator, recipient } = payload;
-    const creatorSocket = this.sessions.getUserSocket(creator.id);
-    console.log('authorSocket', creatorSocket?.user);
     const recipientSocket = this.sessions.getUserSocket(recipient.id);
-    console.log('recipientSocket', recipientSocket?.user);
-    if (creatorSocket.user == recipientSocket.user)
-      creatorSocket.emit('newConversation', payload);
-    else {
-      if (creatorSocket) creatorSocket.emit('newConversation', payload);
-      if (recipientSocket) recipientSocket.emit('newConversation', payload);
+    if (recipientSocket) recipientSocket.emit('newConversation', payload);
+  }
+  @OnEvent('message.deleted')
+  handleMessageDeleteEvent(payload: Message) {
+    console.log('inside handleMessageDeleteEvent', payload);
+    if (payload.twoWayDelete) {
+      this.server
+        .in(`conversation:${payload.conversation.id}`)
+        .emit('onMessageDelete', payload);
+    } else if (payload.oneWayDelete) {
+      console.log('one way delete');
+      const recipientSocket = this.sessions.getUserSocket(
+        payload.conversation.recipient.id,
+      );
+      console.log('recipient socket', recipientSocket);
+      if (recipientSocket) recipientSocket.emit('onMessageDelete', payload);
+      this.server
+        .in(`conversation:${payload.conversation.id}`)
+        .emit('onMessageDelete', payload);
     }
   }
 }

@@ -10,5 +10,6 @@ export interface IUserService {
   findUser(findUserParams: findUserParams): Promise<User>;
   saveUser(user: User): Promise<User>;
   findUserWithPassword(findUserParams: findUserParams): Promise<User>;
-  findAllUsers(params: findAllUserParams): Promise<User[]>;
+  findAllUsersWithConditions(params: findAllUserParams): Promise<User[]>;
+  findAvailableUsers(user: User): Promise<User[]>;
 }
