@@ -1,20 +1,9 @@
-import {
-  Body,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IConversationsService } from 'src/conversations/conversations';
 import { Services } from 'src/utils/constants';
-import { Conversation, Message, User } from 'src/utils/typeorm';
-import {
-  CreateConversationParams,
-  createMessageParam,
-  deleteMessageParams,
-  modifyMessageParams,
-} from 'src/utils/types';
+import { Message, User } from 'src/utils/typeorm';
+import { createMessageParam, deleteMessageParams } from 'src/utils/types';
 import { Repository } from 'typeorm';
 import { IMessageService } from './message';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -34,9 +23,11 @@ export class MessageService implements IMessageService {
     content,
     conversationId,
   }: createMessageParam): Promise<Message> {
+    console.log('conversation id when chat', conversationId);
     const conversation = await this.conversationService.getConversationById(
       conversationId,
     );
+    console.log('create message at conversation:', conversation);
     if (!conversation) {
       throw new HttpException('conversation not found', HttpStatus.BAD_REQUEST);
     }
@@ -80,11 +71,12 @@ export class MessageService implements IMessageService {
     const message = await this.messageRepository.find({
       where: {
         conversation: { id: conversationId },
+        twoWayDelete: false,
       },
       order: { createdAt: 'DESC' },
       relations: ['author'],
 
-      withDeleted: false,
+      withDeleted: true,
       // skip: 0,
       // take:3, // *pagination
     });
@@ -151,7 +143,10 @@ export class MessageService implements IMessageService {
           const finalUpdatedMessage = await this.modifyMessageAndReturnFullInfo(
             updatedMessage,
           );
-          this.eventEmitter.emit('message.deleted', finalUpdatedMessage);
+          this.eventEmitter.emit('message.deleted', {
+            message: finalUpdatedMessage,
+            userId: user.id,
+          });
         } else {
           console.log('result', result);
           throw new HttpException('message not found', HttpStatus.NOT_FOUND);
@@ -169,7 +164,10 @@ export class MessageService implements IMessageService {
           const finalUpdatedMessage = await this.modifyMessageAndReturnFullInfo(
             updatedMessage,
           );
-          this.eventEmitter.emit('message.deleted', finalUpdatedMessage);
+          this.eventEmitter.emit('message.deleted', {
+            message: finalUpdatedMessage,
+            userId: user.id,
+          });
         } else {
           console.log('result', result);
           throw new HttpException('message not found', HttpStatus.NOT_FOUND);

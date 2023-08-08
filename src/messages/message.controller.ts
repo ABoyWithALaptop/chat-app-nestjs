@@ -10,13 +10,11 @@ import {
 } from '@nestjs/common';
 import { ParseIntPipe } from '@nestjs/common/pipes/parse-int.pipe';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CreateConversation } from 'src/conversations/dtos/CreateConversation.dto';
 import { Routes, Services } from 'src/utils/constants';
 import { AuthUser } from 'src/utils/decorators';
 import { User } from 'src/utils/typeorm';
 import { createMessageDto } from './dtos/CreateMessage.dto';
 import { IMessageService } from './message';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthenticatedGuard } from 'src/auth/utils/Guards';
 
 @UseGuards(AuthenticatedGuard)

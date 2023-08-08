@@ -1,13 +1,12 @@
 import { OnEvent } from '@nestjs/event-emitter';
 import { Inject } from '@nestjs/common';
 import {
-  MessageBody,
   OnGatewayConnection,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { Services } from 'src/utils/constants';
 import { Conversation, Message } from 'src/utils/typeorm';
 import { IGatewaySessionManager } from './gateway.session';
@@ -65,15 +64,17 @@ export class MessingGateway implements OnGatewayConnection {
 
   @SubscribeMessage('typing')
   handleTyping(client: AuthenticatedSocket, payload: number) {
+    console.log(`chanel typing: ${payload}`);
     if (client.typing) {
       return;
       // this.server.in(`conversation:${payload}`).emit('userType', null);
     } else {
       this.sessions.setTyping(client.user.id, true);
       const setOfUserTyping = this.sessions.getAllTyping(payload);
+      console.log(`setOfUserTyping: ${setOfUserTyping}`);
       this.server
         .in(`conversation:${payload}`)
-        .emit('userType', setOfUserTyping);
+        .emit('userType', { user: setOfUserTyping, idNumber: payload });
     }
   }
   @SubscribeMessage('notTyping')
@@ -117,22 +118,16 @@ export class MessingGateway implements OnGatewayConnection {
     if (recipientSocket) recipientSocket.emit('newConversation', payload);
   }
   @OnEvent('message.deleted')
-  handleMessageDeleteEvent(payload: Message) {
-    console.log('inside handleMessageDeleteEvent', payload);
-    if (payload.twoWayDelete) {
+  handleMessageDeleteEvent(payload: { message: Message; userId: number }) {
+    console.log('inside handleMessageDeleteEvent', payload.message);
+    if (payload.message.twoWayDelete) {
       this.server
-        .in(`conversation:${payload.conversation.id}`)
+        .in(`conversation:${payload.message.conversation.id}`)
         .emit('onMessageDelete', payload);
-    } else if (payload.oneWayDelete) {
+    } else if (payload.message.oneWayDelete) {
       console.log('one way delete');
-      const recipientSocket = this.sessions.getUserSocket(
-        payload.conversation.recipient.id,
-      );
-      console.log('recipient socket', recipientSocket);
-      if (recipientSocket) recipientSocket.emit('onMessageDelete', payload);
-      this.server
-        .in(`conversation:${payload.conversation.id}`)
-        .emit('onMessageDelete', payload);
+      const userSocket = this.sessions.getUserSocket(payload.userId);
+      userSocket.emit('onMessageDelete', payload.message);
     }
   }
 }
